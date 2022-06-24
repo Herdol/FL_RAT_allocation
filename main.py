@@ -13,13 +13,6 @@ from turtle import distance
 import gym
 
 import numpy as np
-'''#import matplotlib
-import matplotlib.pyplot as plt
-from collections import namedtuple, deque
-from itertools import count'''
-'''#from PIL import Image
-import math
-import random'''
 import torch
 import torch.optim as optim
 import os
