@@ -1,3 +1,10 @@
-# RAT-selection-and-data-coding
+# RAT selection and data coding in FL Framework
 
-Cuda %PATH% = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\bin;
+Create a conda environment in Python == 3.7.0
+torch = 10.2
+others are given in requirements.txt
+
+Once installation completed, navigate to gymCaching folder and install environment as:
+```
+pip install -e .
+```
