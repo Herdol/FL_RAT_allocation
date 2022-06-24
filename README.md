@@ -8,3 +8,5 @@ Once installation completed, navigate to [gymCaching folder](https://github.com/
 ```
 pip install -e .
 ```
+
+Run main.py for the whole simulation.
