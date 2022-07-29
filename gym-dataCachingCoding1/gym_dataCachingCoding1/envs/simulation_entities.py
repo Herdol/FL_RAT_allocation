@@ -17,8 +17,8 @@ class Buffer_Object(object):
         #self.data_packets = np.array([np.linspace(20,20,8),np.linspace(100,100,8)]) # Was np.linspace(200,200,8)
         self.sim_length='short'
         if self.sim_length == 'short':
-            self.data_packets = np.array([np.linspace(2,2,8),np.linspace(10,10,8)]) 
-            self.data_deadline = np.array([np.linspace(0.2,0.2,8),np.linspace(1,1,8)])  #0.2 is not tested in terms of variable format.
+            self.data_packets = np.array([np.linspace(1,1,8),np.linspace(10,10,8)]) 
+            self.data_deadline = np.array([np.linspace(0.1,0.1,8),np.linspace(1,1,8)])  #0.2 is not tested in terms of variable format.
         elif self.sim_length == 'long':
             self.data_packets = np.array([np.linspace(20,20,8),np.linspace(100,100,8)]) 
             self.data_deadline = np.array([np.linspace(2,2,8),np.linspace(20,20,8)])  #set deadlines corresponding to job size
