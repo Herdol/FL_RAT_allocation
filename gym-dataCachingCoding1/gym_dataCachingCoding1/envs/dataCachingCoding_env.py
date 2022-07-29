@@ -1,3 +1,4 @@
+from urllib.parse import scheme_chars
 import numpy as np
 import scipy.io
 import scipy.special
@@ -33,6 +34,8 @@ class Environment_Map(gym.Env):
         self.USER_USAGE_FLAG = False
         self.LATENCY_USAGE_FLAG = True
         self.THROUGHPUT_USAGE_FLAG = True
+        # Meta learning task
+        self.task = 0
         # same as reset
         self.generate_bs()
         self.gen_vehicles()
@@ -154,13 +157,14 @@ class Environment_Map(gym.Env):
                                 self.vehicle_velocities()[:,0:2].flatten(),
                                 self.bs['init'].state(self.calculate_distances())])
 
-    def step(self, action):
+    def step(self, action, meta_task=0):
         """
         Perform a step in the environment.
         action: the action the agent has selected
         actions_todo: if there are two rats that need to be set, the agent may want to select multiple actions at
         one time step
         """
+        meta_task = self.task
         self.step_count += 1
         self.actions_todo = self.actions_todo - 1
         r = 0.0
@@ -192,7 +196,7 @@ class Environment_Map(gym.Env):
         # get job history
         self.get_job_history()
         # get reward
-        r += self.reward()
+        r += self.reward(reward_task=meta_task)
         if self.step_count > 5000:
             done = True
             self.step_count = 0
@@ -220,11 +224,51 @@ class Environment_Map(gym.Env):
             elif i == 'throughput':
                 self.history[i] = self.job_overview['throughput']'''
 
-            
+    def meta_task(self,meta_task):
+        """
+        Args:
+            meta_task (task): This function will change how reward is calulated. 
+            The function created because of error in step function: 
+            "step() takes 2 positional arguments but 3 were given"
+        """
+        self.task = meta_task        
 
-    def reward(self):
+    def reward(self,reward_task=None):
+        """Reward function defines the tasks that motivates RL agents. 
+
+        Args:
+            reward_task (_type_, reward_task): Defaults to None. Env.step() triggers reward will be derived by which task.
+
+        Returns:
+            _type_: _description_
+        """
         #Tasks can define different rewards for meta learning under this function.
-        reward = self.usage_reward() + self.completed_reward() + self.deadline_reward() + self.latency_reward() + self.throughput_reward()
+        reward=0
+        scheme =2
+        if scheme == 1:
+            if reward_task==0:
+                reward = self.usage_reward() + self.completed_reward() + self.deadline_reward() + self.latency_reward() + self.throughput_reward()
+            elif reward_task == 1:
+                reward = self.usage_reward() + self.completed_reward() + self.deadline_reward()
+            elif reward_task == 2:
+                reward = self.usage_reward() + self.latency_reward() 
+            elif reward_task == 3: 
+                reward = self.usage_reward() + self.throughput_reward()
+            elif reward_task == 4:
+                reward = self.usage_reward() + self.prop_fairness_reward()
+        elif scheme == 2:
+            if reward_task==0:
+                reward = self.usage_reward() + self.completed_reward() + self.deadline_reward()
+            elif reward_task == 1:
+                reward = self.usage_reward() + self.prop_fairness_reward()
+            elif reward_task == 2:
+                reward = self.usage_reward() + self.latency_reward() 
+            elif reward_task == 3: 
+                reward = self.usage_reward() + self.throughput_reward()
+            elif reward_task == 4:
+                reward = self.usage_reward() + self.completed_reward() + self.deadline_reward() + self.latency_reward() + self.throughput_reward()
+        
+        
         # reset job_overview
         self.job_overview = {'completed_jobs':0, 'completed_jobs_size':[], 'exceed_deadline':0, 'exceed_deadline_size':[], 'latency':0.0, 'throughput':0.0}
         return reward
@@ -280,7 +324,7 @@ class Environment_Map(gym.Env):
             Completed =1 # Not a good solution to prevent dividing by 0
         latency = 0
         if self.LATENCY_USAGE_FLAG:
-            latency =1*(1- float((self.job_overview['latency'])/Completed))
+            latency =100*(1- float((self.job_overview['latency'])/Completed))
         return latency
     
     def throughput_reward(self):
@@ -293,8 +337,21 @@ class Environment_Map(gym.Env):
         if (Completed + Lost) == 0:
             Lost =1 # Not a good solution
         if self.THROUGHPUT_USAGE_FLAG:
-            throughput = float((self.job_overview['throughput'])/(Completed+Lost)) * 0.001
+            throughput = float((self.job_overview['throughput'])/(Completed+Lost)) * 1
         return throughput
+
+    def prop_fairness_reward(self):
+        """
+        Co-effecienct of throughput is defined as 0.05. It indicates the MBytes/s divided by 20
+        """
+        throughput = 0
+        Completed=self.job_overview['completed_jobs']
+        Lost = self.job_overview['exceed_deadline']
+        if (Completed + Lost) == 0:
+            Lost =1 # Not a good solution
+        if self.THROUGHPUT_USAGE_FLAG:
+            throughput = float((self.job_overview['throughput'])/(Completed+Lost)) * 3
+        return np.float32(np.log(throughput))
     # def lost_reward(self):
     #     """
     #     You'll want to change the co-effeciencts probably
